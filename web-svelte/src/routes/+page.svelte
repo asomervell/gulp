@@ -317,7 +317,7 @@
 	}
 </style>
 
-<div class="h-screen w-screen flex items-center justify-center bg-white dark:bg-zinc-950 overflow-hidden">
+<div class="h-screen w-screen flex items-center justify-center bg-background overflow-hidden">
 
 	{#if appState === 'input' || appState === 'loading'}
 		<!-- Input Screen -->
@@ -330,17 +330,17 @@
 				disabled={appState === 'loading'}
 				placeholder="Paste any URL, text, or drop a file to begin..."
 				rows="3"
-				class="w-full bg-transparent border-none outline-none resize-none text-center text-xl text-zinc-600 dark:text-zinc-400 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 leading-relaxed"
+				class="w-full bg-transparent border-none outline-none resize-none text-center text-xl text-muted-foreground placeholder:text-border leading-relaxed"
 			></textarea>
 
 			{#if appState === 'loading'}
-				<p class="mt-4 text-sm text-zinc-400 dark:text-zinc-600">
+				<p class="mt-4 text-sm text-muted-foreground">
 					Preparing...
 				</p>
 			{/if}
 
 			{#if errorMessage}
-				<p class="mt-4 text-sm text-red-500 dark:text-red-400">
+				<p class="mt-4 text-sm text-destructive">
 					{errorMessage}
 				</p>
 			{/if}
@@ -351,7 +351,7 @@
 		{#key countdownValue}
 			<div
 				bind:this={countdownRef}
-				class="font-geist-mono text-8xl text-zinc-300 dark:text-zinc-700 select-none animate-countdown"
+				class="font-geist-mono text-8xl text-muted-foreground select-none animate-countdown"
 			>
 				{countdownValue}
 			</div>
@@ -363,48 +363,48 @@
 			<!-- Word Display -->
 			<div class="flex flex-col items-center">
 				<!-- Top centerline marker -->
-				<div class="w-px h-5 bg-zinc-300 dark:bg-zinc-700"></div>
+				<div class="w-px h-5 bg-border"></div>
 
 				<!-- RSVP Word -->
 				<div class="h-20 md:h-24 flex items-center justify-center my-1">
 					<div class="font-geist-mono text-5xl md:text-7xl select-none whitespace-nowrap">
 						<span
-							class="inline-block text-right text-zinc-900 dark:text-zinc-100"
+							class="inline-block text-right text-muted-foreground"
 							style="width: 6ch;"
 						>{wordParts.left}</span><!--
-						--><span class="text-indigo-600 dark:text-indigo-400">{wordParts.pivot}</span><!--
+						--><span class="text-foreground font-medium">{wordParts.pivot}</span><!--
 						--><span
-							class="inline-block text-left text-zinc-900 dark:text-zinc-100"
+							class="inline-block text-left text-muted-foreground"
 							style="width: 6ch;"
 						>{wordParts.right}</span>
 					</div>
 				</div>
 
 				<!-- Bottom centerline marker -->
-				<div class="w-px h-5 bg-zinc-300 dark:bg-zinc-700"></div>
+				<div class="w-px h-5 bg-border"></div>
 			</div>
 
 			<!-- Controls Bar -->
-				<div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-2.5 mt-8 sm:mt-10 rounded-2xl sm:rounded-full bg-zinc-100 dark:bg-zinc-900 mx-4 sm:mx-0">
+				<div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-2.5 mt-8 sm:mt-10 rounded-2xl sm:rounded-full bg-secondary mx-4 sm:mx-0">
 					<!-- Top row on mobile: main controls -->
 					<div class="flex items-center gap-4">
 						<button
 							onclick={goBack}
-							class="text-sm text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+							class="text-sm text-muted-foreground hover:text-foreground transition-colors"
 						>
 							Back
 						</button>
 
 						<button
 							onclick={togglePlay}
-							class="px-5 py-1.5 text-sm font-medium rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
+							class="px-5 py-1.5 text-sm font-medium rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
 						>
 							{appState === 'playing' ? 'Pause' : 'Start'}
 						</button>
 
 						<button
 							onclick={restart}
-							class="text-sm text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+							class="text-sm text-muted-foreground hover:text-foreground transition-colors"
 						>
 							Restart
 						</button>
@@ -412,7 +412,7 @@
 
 					<!-- Bottom row on mobile: progress and speed -->
 					<div class="flex items-center gap-4">
-						<span class="text-sm text-zinc-500 dark:text-zinc-500 font-mono tabular-nums">
+						<span class="text-sm text-muted-foreground font-mono tabular-nums">
 							{progress}
 						</span>
 
@@ -424,9 +424,9 @@
 								step="25"
 								bind:value={wpm}
 								oninput={handleWpmChange}
-								class="w-20 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer accent-zinc-600 dark:accent-zinc-400"
+								class="w-20 h-1 bg-border rounded-full appearance-none cursor-pointer accent-primary"
 							/>
-							<span class="text-sm text-zinc-500 dark:text-zinc-500 font-mono tabular-nums w-10">
+							<span class="text-sm text-muted-foreground font-mono tabular-nums w-10">
 								{wpm}
 							</span>
 						</div>

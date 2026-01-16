@@ -34,14 +34,153 @@
     unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
-/* App-wide defaults; keep minimal so your theme drop-in stays clean. */
-:root {
-    color-scheme: light dark;
+/* Theme variables */
+@layer base {
+    :root {
+        /* Core palette - warm stone/cream */
+        --background: hsl(60 9.1% 97.8%);
+        --foreground: oklch(0.141 0.005 285.823);
+
+        /* Primary - Stone (same as foreground for cohesion) */
+        --primary: oklch(0.141 0.005 285.823);
+        --primary-foreground: hsl(60 9.1% 97.8%);
+
+        /* Secondary/Muted */
+        --secondary: oklch(0.92 0.004 286.32);
+        --secondary-foreground: oklch(0.21 0.006 285.885);
+        --muted: oklch(0.92 0.004 286.32);
+        --muted-foreground: oklch(0.552 0.016 285.938);
+
+        /* Accents */
+        --accent: oklch(0.92 0.004 286.32);
+        --accent-foreground: oklch(0.21 0.006 285.885);
+
+        /* Borders */
+        --border: oklch(0.87 0.006 286.286);
+        --ring: oklch(0.552 0.016 285.938);
+
+        /* Status */
+        --destructive: oklch(0.577 0.245 27.325);
+        --success: oklch(0.62 0.19 145);
+
+        /* Stone scale */
+        --stone-850: oklch(0.245 0.01 45);
+
+        /* Neutral scale */
+        --neutral-990: hsl(0, 0%, 8%);
+        --neutral-980: hsl(0, 0%, 9%);
+        --neutral-970: hsl(0, 0%, 13%);
+
+        color-scheme: light dark;
+    }
+
+    .dark {
+        --background: oklch(0.245 0.01 45);
+        --foreground: oklch(0.985 0 0);
+
+        /* Primary - Light/white in dark mode */
+        --primary: oklch(0.985 0 0);
+        --primary-foreground: oklch(0.245 0.01 45);
+
+        /* Secondary/Muted */
+        --secondary: oklch(0.32 0.01 45);
+        --secondary-foreground: oklch(0.985 0 0);
+        --muted: oklch(0.32 0.01 45);
+        --muted-foreground: oklch(0.65 0.01 45);
+
+        /* Accents */
+        --accent: oklch(0.32 0.01 45);
+        --accent-foreground: oklch(0.985 0 0);
+
+        /* Borders */
+        --border: oklch(0.35 0.01 45);
+        --ring: oklch(0.65 0.01 45);
+
+        /* Status */
+        --destructive: oklch(0.704 0.191 22.216);
+        --success: oklch(0.72 0.19 145);
+    }
 }
 
-/* Geist Mono for RSVP display */
+/* Apply theme to elements */
+@layer base {
+    html {
+        background-color: var(--background);
+        color: var(--foreground);
+    }
+
+    body {
+        background-color: var(--background);
+        color: var(--foreground);
+    }
+}
+
+/* Geist Mono utility class */
 .font-geist-mono {
     font-family:
         "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular,
         "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Custom theme utilities */
+@layer utilities {
+    .bg-background {
+        background-color: var(--background);
+    }
+
+    .text-foreground {
+        color: var(--foreground);
+    }
+
+    .bg-primary {
+        background-color: var(--primary);
+    }
+
+    .text-primary {
+        color: var(--primary);
+    }
+
+    .text-primary-foreground {
+        color: var(--primary-foreground);
+    }
+
+    .bg-secondary {
+        background-color: var(--secondary);
+    }
+
+    .text-secondary-foreground {
+        color: var(--secondary-foreground);
+    }
+
+    .bg-muted {
+        background-color: var(--muted);
+    }
+
+    .text-muted-foreground {
+        color: var(--muted-foreground);
+    }
+
+    .bg-accent {
+        background-color: var(--accent);
+    }
+
+    .text-accent-foreground {
+        color: var(--accent-foreground);
+    }
+
+    .border-border {
+        border-color: var(--border);
+    }
+
+    .ring-ring {
+        --tw-ring-color: var(--ring);
+    }
+
+    .text-destructive {
+        color: var(--destructive);
+    }
+
+    .text-success {
+        color: var(--success);
+    }
 }
