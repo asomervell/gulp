@@ -29,9 +29,7 @@
     "@fontsource-variable/geist-mono": "^5.2.7",
     "@mendable/firecrawl-js": "^4.11.1",
     "groq-sdk": "^0.37.0",
-    "mammoth": "^1.11.0",
     "motion": "^12.26.2",
-    "openai": "^6.16.0",
-    "pdf-parse": "^2.4.5"
+    "openai": "^6.16.0"
   }
 }

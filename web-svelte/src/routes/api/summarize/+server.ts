@@ -5,6 +5,92 @@ import { OPENAI_API_KEY } from "$env/static/private";
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
+// Security limits
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_FILENAME_LENGTH = 255;
+
+// Allowed file extensions (whitelist)
+const ALLOWED_EXTENSIONS = new Set([
+  "txt",
+  "md",
+  "markdown",
+  "html",
+  "htm",
+  "pdf",
+  "docx",
+  "csv",
+  "json",
+  "xml",
+  "yaml",
+  "yml",
+  "log",
+  "rst",
+  "tex",
+  "rtf",
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+]);
+
+// Allowed MIME types (whitelist)
+const ALLOWED_MIME_TYPES = new Set([
+  "text/plain",
+  "text/markdown",
+  "text/html",
+  "text/csv",
+  "text/xml",
+  "application/json",
+  "application/xml",
+  "application/pdf",
+  "application/rtf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+]);
+
+/**
+ * Sanitize filename to prevent path traversal and other attacks
+ */
+function sanitizeFilename(filename: string): string {
+  // Remove path components
+  const basename = filename.split(/[/\\]/).pop() || "file";
+  // Remove null bytes and control characters
+  const cleaned = basename.replace(/[\x00-\x1f\x7f]/g, "");
+  // Limit length
+  return cleaned.slice(0, MAX_FILENAME_LENGTH);
+}
+
+/**
+ * Validate file extension and MIME type
+ */
+function validateFileType(
+  filename: string,
+  mimeType: string,
+): { valid: boolean; ext: string } {
+  const ext = filename.toLowerCase().split(".").pop() || "";
+
+  // Check extension whitelist
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    return { valid: false, ext };
+  }
+
+  // Check MIME type whitelist (allow empty/generic types as browsers may not set them)
+  if (
+    mimeType &&
+    mimeType !== "application/octet-stream" &&
+    !ALLOWED_MIME_TYPES.has(mimeType) &&
+    !mimeType.startsWith("text/")
+  ) {
+    return { valid: false, ext };
+  }
+
+  return { valid: true, ext };
+}
+
 /**
  * POST /api/summarize
  * Accepts file uploads and sends to OpenAI for processing.
@@ -16,7 +102,7 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 export const POST: RequestHandler = async ({ request }) => {
   const contentType = request.headers.get("content-type") || "";
 
-  let filename: string | undefined;
+  let filename: string;
   let fileBuffer: ArrayBuffer;
   let mimeType: string;
 
@@ -28,9 +114,33 @@ export const POST: RequestHandler = async ({ request }) => {
       throw error(400, "No file provided");
     }
 
-    filename = file.name;
-    fileBuffer = await file.arrayBuffer();
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      throw error(413, "File too large. Maximum size is 20MB.");
+    }
+
+    if (file.size === 0) {
+      throw error(400, "File is empty");
+    }
+
+    // Sanitize filename
+    filename = sanitizeFilename(file.name);
+    if (!filename || filename === ".") {
+      throw error(400, "Invalid filename");
+    }
+
     mimeType = file.type || getMimeType(filename);
+
+    // Validate file type
+    const validation = validateFileType(filename, mimeType);
+    if (!validation.valid) {
+      throw error(
+        415,
+        `Unsupported file type: ${validation.ext || mimeType}. Allowed: PDF, DOCX, TXT, MD, HTML, images.`,
+      );
+    }
+
+    fileBuffer = await file.arrayBuffer();
   } else {
     throw error(400, "Invalid content type. Use multipart/form-data");
   }

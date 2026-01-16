@@ -1,0 +1,13 @@
+import { json } from "@sveltejs/kit";
+import type { RequestHandler } from "./$types";
+
+/**
+ * GET /api/health
+ * Health check endpoint for monitoring and load balancers
+ */
+export const GET: RequestHandler = async () => {
+  return json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  });
+};

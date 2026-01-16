@@ -7,6 +7,99 @@ import { FIRECRAWL_API_KEY, GROQ_API_KEY } from "$env/static/private";
 const firecrawl = new Firecrawl({ apiKey: FIRECRAWL_API_KEY });
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 
+// Maximum URL length to prevent abuse
+const MAX_URL_LENGTH = 2048;
+
+// Blocked hosts (internal/private networks, localhost, etc.)
+const BLOCKED_HOSTS = [
+  "localhost",
+  "127.0.0.1",
+  "0.0.0.0",
+  "::1",
+  "[::1]",
+  "169.254.", // Link-local
+  "10.", // Private class A
+  "192.168.", // Private class C
+  "172.16.",
+  "172.17.",
+  "172.18.",
+  "172.19.", // Private class B
+  "172.20.",
+  "172.21.",
+  "172.22.",
+  "172.23.",
+  "172.24.",
+  "172.25.",
+  "172.26.",
+  "172.27.",
+  "172.28.",
+  "172.29.",
+  "172.30.",
+  "172.31.",
+  "metadata.google", // Cloud metadata
+  "169.254.169.254", // AWS/GCP metadata
+  ".internal",
+  ".local",
+];
+
+/**
+ * Check if a hostname is blocked (internal/private)
+ */
+function isBlockedHost(hostname: string): boolean {
+  const lower = hostname.toLowerCase();
+  return BLOCKED_HOSTS.some(
+    (blocked) =>
+      lower === blocked || lower.startsWith(blocked) || lower.endsWith(blocked),
+  );
+}
+
+/**
+ * Validate and sanitize URL
+ */
+function validateUrl(urlString: string): URL {
+  // Check length
+  if (urlString.length > MAX_URL_LENGTH) {
+    throw new Error("URL is too long");
+  }
+
+  // Parse URL
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(urlString.trim());
+  } catch {
+    throw new Error("Invalid URL format");
+  }
+
+  // Check protocol
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    throw new Error("Only HTTP and HTTPS URLs are allowed");
+  }
+
+  // Check for blocked hosts (SSRF protection)
+  if (isBlockedHost(parsedUrl.hostname)) {
+    throw new Error("This URL cannot be accessed");
+  }
+
+  // Check for IP addresses that might bypass hostname checks
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (ipv4Regex.test(parsedUrl.hostname)) {
+    const parts = parsedUrl.hostname.split(".").map(Number);
+    // Block private IP ranges
+    if (
+      parts[0] === 10 ||
+      parts[0] === 127 ||
+      (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+      (parts[0] === 192 && parts[1] === 168) ||
+      (parts[0] === 169 && parts[1] === 254) ||
+      parts[0] === 0
+    ) {
+      throw new Error("This URL cannot be accessed");
+    }
+  }
+
+  return parsedUrl;
+}
+
 /**
  * POST /api/extract
  * Extracts clean paragraph text from a URL using Firecrawl,
@@ -16,6 +109,12 @@ const groq = new Groq({ apiKey: GROQ_API_KEY });
  * Response: { text: string, sourceUrl: string, title?: string }
  */
 export const POST: RequestHandler = async ({ request }) => {
+  // Validate content type
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw error(400, "Content-Type must be application/json");
+  }
+
   let body: { url?: string };
 
   try {
@@ -30,14 +129,12 @@ export const POST: RequestHandler = async ({ request }) => {
     throw error(400, 'Missing or invalid "url" field');
   }
 
-  // Validate URL format
+  // Validate and sanitize URL
+  let validatedUrl: URL;
   try {
-    const parsedUrl = new URL(url);
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      throw new Error("Invalid protocol");
-    }
-  } catch {
-    throw error(400, "Invalid URL format. Must be a valid http or https URL.");
+    validatedUrl = validateUrl(url);
+  } catch (err) {
+    throw error(400, err instanceof Error ? err.message : "Invalid URL");
   }
 
   // Step 1: Extract content using Firecrawl
@@ -45,7 +142,7 @@ export const POST: RequestHandler = async ({ request }) => {
   let title: string | undefined;
 
   try {
-    const scrapeResult = await firecrawl.scrape(url, {
+    const scrapeResult = await firecrawl.scrape(validatedUrl.toString(), {
       formats: ["markdown"],
       onlyMainContent: true,
     });
@@ -128,7 +225,7 @@ If the content appears to be garbage or non-article content, return an empty str
 
   return json({
     text: cleanedText,
-    sourceUrl: url,
+    sourceUrl: validatedUrl.toString(),
     ...(title && { title }),
   });
 };
