@@ -424,7 +424,8 @@
 								step="25"
 								bind:value={wpm}
 								oninput={handleWpmChange}
-								class="w-20 h-1 bg-border rounded-full appearance-none cursor-pointer accent-primary"
+								class="w-20 h-1 bg-border rounded-full appearance-none cursor-pointer"
+								style="accent-color: var(--foreground);"
 							/>
 							<span class="text-sm text-muted-foreground font-mono tabular-nums w-10">
 								{wpm}
