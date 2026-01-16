@@ -10,6 +10,6 @@
     }
   },
   "deploy": {
-    "startCommand": "bun run preview --host --port $PORT"
+    "startCommand": "node build/index.js"
   }
 }
