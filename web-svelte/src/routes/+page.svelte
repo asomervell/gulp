@@ -385,47 +385,53 @@
 			</div>
 
 			<!-- Controls Bar -->
-			<div class="flex items-center gap-4 px-5 py-2.5 mt-10 rounded-full bg-zinc-100 dark:bg-zinc-900">
-				<button
-					onclick={goBack}
-					class="text-sm text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
-				>
-					Back
-				</button>
+				<div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-2.5 mt-8 sm:mt-10 rounded-2xl sm:rounded-full bg-zinc-100 dark:bg-zinc-900 mx-4 sm:mx-0">
+					<!-- Top row on mobile: main controls -->
+					<div class="flex items-center gap-4">
+						<button
+							onclick={goBack}
+							class="text-sm text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+						>
+							Back
+						</button>
 
-				<button
-					onclick={restart}
-					class="text-sm text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
-				>
-					Restart
-				</button>
+						<button
+							onclick={togglePlay}
+							class="px-5 py-1.5 text-sm font-medium rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
+						>
+							{appState === 'playing' ? 'Pause' : 'Start'}
+						</button>
 
-				<button
-					onclick={togglePlay}
-					class="px-4 py-1.5 text-sm font-medium rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
-				>
-					{appState === 'playing' ? 'Pause' : 'Start'}
-				</button>
+						<button
+							onclick={restart}
+							class="text-sm text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+						>
+							Restart
+						</button>
+					</div>
 
-				<span class="text-sm text-zinc-500 dark:text-zinc-500 font-mono tabular-nums min-w-[5rem] text-center">
-					{progress}
-				</span>
+					<!-- Bottom row on mobile: progress and speed -->
+					<div class="flex items-center gap-4">
+						<span class="text-sm text-zinc-500 dark:text-zinc-500 font-mono tabular-nums">
+							{progress}
+						</span>
 
-				<div class="flex items-center gap-2">
-					<input
-						type="range"
-						min="100"
-						max="1200"
-						step="25"
-						bind:value={wpm}
-						oninput={handleWpmChange}
-						class="w-20 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer accent-zinc-600 dark:accent-zinc-400"
-					/>
-					<span class="text-sm text-zinc-500 dark:text-zinc-500 font-mono tabular-nums w-10">
-						{wpm}
-					</span>
+						<div class="flex items-center gap-2">
+							<input
+								type="range"
+								min="100"
+								max="1200"
+								step="25"
+								bind:value={wpm}
+								oninput={handleWpmChange}
+								class="w-20 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer accent-zinc-600 dark:accent-zinc-400"
+							/>
+							<span class="text-sm text-zinc-500 dark:text-zinc-500 font-mono tabular-nums w-10">
+								{wpm}
+							</span>
+						</div>
+					</div>
 				</div>
-			</div>
 		</div>
 	{/if}
 </div>
