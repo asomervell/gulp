@@ -1,6 +1,14 @@
 import type { Handle } from "@sveltejs/kit";
 
 /**
+ * IMPORTANT: Set BODY_SIZE_LIMIT environment variable to allow file uploads.
+ * Default SvelteKit limit is 512KB. For file uploads, set:
+ *   BODY_SIZE_LIMIT=52428800  (50MB)
+ * or
+ *   BODY_SIZE_LIMIT=0  (unlimited, then we handle it ourselves below)
+ */
+
+/**
  * Simple in-memory rate limiter
  * In production, consider using Redis or a distributed cache
  */
@@ -109,6 +117,7 @@ function addSecurityHeaders(response: Response): Response {
 
 /**
  * Validate request size for API endpoints
+ * Note: Also requires BODY_SIZE_LIMIT env var to be set >= this value
  */
 const MAX_REQUEST_SIZE = 50 * 1024 * 1024; // 50MB for file uploads
 
