@@ -1,0 +1,21 @@
+There is a thing called rapid serial visual presentation (RSVP) that helps you read very quickly.
+
+Two implmenetation examples:
+
+https://wordblip.com/
+
+https://johndamask.com/tools/speed-read.html
+
+I want to build a website that replicates these but far more cleanly. We will build a web version, a chrome plugin, and an ios app.
+
+We will ONLY plan for the web version now, but consider a common design language across the apps.
+
+I want the web version to be system-aware of light or dark mode, I'll provide a tailwind theme once we're done to make it look how I Want it. I want you to use tailwind, typescript, tailwind catalyst (that is the foundation of what's I've already added to our web app)
+
+I want the user to paste text on the right hand half of a page, and have the RSVP version on the left half of the screen with simple start/pause and speed controls.
+
+Remember, frightfully simple, text on a centerline, central letter a slightly different colour.
+
+Let's write this plan.
+
+Let's plan this out.

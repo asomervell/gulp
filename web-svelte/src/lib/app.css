@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist-mono";
+
+/* App-wide defaults; keep minimal so your theme drop-in stays clean. */
+:root {
+    color-scheme: light dark;
+}
+
+/* Geist Mono for RSVP display */
+.font-geist-mono {
+    font-family:
+        "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular,
+        "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
