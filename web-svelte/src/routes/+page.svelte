@@ -13,8 +13,11 @@
 	let sourceText = $state('');
 	let tokens = $state<string[]>([]);
 	let wordIndex = $state(0);
-	let wpm = $state(600);
+	let wpm = $state(450);
 	let errorMessage = $state('');
+	let hasSavedSession = $state(false);
+	let savedSessionPreview = $state('');
+	let isDragging = $state(false);
 
 	// Countdown state
 	let countdownValue = $state<number | null>(null);
@@ -52,25 +55,44 @@
 		}
 	}
 
-	// Timer management
+	// Timer management with punctuation pauses
+	function getWordDelay(word: string): number {
+		const baseDelay = msPerWord;
+		// Add extra pause for sentence-ending punctuation
+		if (/[.!?]$/.test(word)) {
+			return baseDelay * 1.5; // 50% longer pause
+		}
+		// Slight pause for clause boundaries
+		if (/[,;:]$/.test(word)) {
+			return baseDelay * 1.2; // 20% longer pause
+		}
+		return baseDelay;
+	}
+
+	function scheduleNextWord() {
+		if (wordIndex < tokens.length - 1) {
+			const delay = getWordDelay(tokens[wordIndex]);
+			timerId = setTimeout(() => {
+				wordIndex++;
+				persistState();
+				if (appState === 'playing') {
+					scheduleNextWord();
+				}
+			}, delay);
+		} else {
+			appState = 'finished';
+		}
+	}
+
 	function startTimer() {
 		stopTimer();
 		if (tokens.length === 0) return;
-
-		timerId = setInterval(() => {
-			if (wordIndex < tokens.length - 1) {
-				wordIndex++;
-				persistState();
-			} else {
-				appState = 'finished';
-				stopTimer();
-			}
-		}, msPerWord);
+		scheduleNextWord();
 	}
 
 	function stopTimer() {
 		if (timerId) {
-			clearInterval(timerId);
+			clearTimeout(timerId);
 			timerId = null;
 		}
 	}
@@ -145,6 +167,82 @@
 				processInput();
 			}
 		}, 50);
+	}
+
+	// Handle file drop (whole page is drop target)
+	function handleDragOver(event: DragEvent) {
+		event.preventDefault();
+		if (appState === 'input') {
+			isDragging = true;
+		}
+	}
+
+	function handleDragLeave(event: DragEvent) {
+		event.preventDefault();
+		// Only set to false if leaving the window
+		if (event.relatedTarget === null) {
+			isDragging = false;
+		}
+	}
+
+	async function handleDrop(event: DragEvent) {
+		event.preventDefault();
+		isDragging = false;
+
+		if (appState !== 'input') return;
+
+		const files = event.dataTransfer?.files;
+		if (!files || files.length === 0) return;
+
+		const file = files[0];
+
+		// Check if it's a supported document format
+		const supportedExtensions = /\.(txt|md|markdown|html|htm|pdf|docx|doc|rtf|csv|json|xml|yaml|yml|log|rst|tex|png|jpg|jpeg|gif|webp)$/i;
+		if (!file.type.startsWith('text/') &&
+			!file.type.startsWith('image/') &&
+			!file.type.includes('pdf') &&
+			!file.type.includes('word') &&
+			!file.type.includes('rtf') &&
+			!supportedExtensions.test(file.name)) {
+			errorMessage = 'Unsupported format. Try PDF, DOCX, TXT, MD, HTML, images, or CSV.';
+			return;
+		}
+
+		errorMessage = '';
+		appState = 'loading';
+
+		try {
+			// Send file to API for parsing and summarization
+			const formData = new FormData();
+			formData.append('file', file);
+
+			const response = await fetch('/api/summarize', {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.message || 'Failed to summarize content');
+			}
+
+			const data = await response.json();
+			const text = data.text;
+
+			sourceText = text;
+			tokens = tokenize(text);
+			wordIndex = 0;
+
+			if (tokens.length === 0) {
+				throw new Error('No readable content found');
+			}
+
+			persistState();
+			await startCountdown();
+		} catch (err) {
+			errorMessage = err instanceof Error ? err.message : 'Failed to process file';
+			appState = 'input';
+		}
 	}
 
 	// Handle keyboard in input
@@ -241,12 +339,9 @@
 		}
 	}
 
-	// Lifecycle
-	onMount(() => {
+	// Resume a saved session
+	function resumeSession() {
 		const saved = loadState();
-		wpm = saved.wpm || 600;
-
-		// If we have saved content, restore it
 		if (saved.sourceText) {
 			sourceText = saved.sourceText;
 			tokens = tokenize(sourceText);
@@ -254,6 +349,21 @@
 			if (tokens.length > 0) {
 				appState = 'paused';
 			}
+		}
+		hasSavedSession = false;
+	}
+
+	// Lifecycle
+	onMount(() => {
+		const saved = loadState();
+		wpm = Math.min(saved.wpm || 300, 900);
+
+		// Check if we have saved content, but don't auto-restore
+		if (saved.sourceText) {
+			hasSavedSession = true;
+			// Create a preview (first few words)
+			const previewTokens = tokenize(saved.sourceText).slice(0, 8);
+			savedSessionPreview = previewTokens.join(' ') + (previewTokens.length >= 8 ? '...' : '');
 		}
 
 		debouncedSave = createDebouncedSave(500);
@@ -317,11 +427,19 @@
 	}
 </style>
 
-<div class="h-screen w-screen flex items-center justify-center bg-background overflow-hidden">
+<div
+	class="h-screen w-screen flex items-center justify-center bg-background overflow-hidden"
+	ondragover={handleDragOver}
+	ondragleave={handleDragLeave}
+	ondrop={handleDrop}
+>
 
 	{#if appState === 'input' || appState === 'loading'}
 		<!-- Input Screen -->
-		<div class="flex flex-col items-center w-full max-w-lg px-6 transition-opacity duration-300" class:opacity-50={appState === 'loading'}>
+		<div
+			class="flex flex-col items-center w-full max-w-lg px-6 transition-opacity duration-300"
+			class:opacity-50={appState === 'loading'}
+		>
 			<!-- Tiny bolt logo -->
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-6 h-6 mb-6 text-muted-foreground">
 				<path d="M11.983 1.907a.75.75 0 0 0-1.292-.657l-8.5 9.5A.75.75 0 0 0 2.75 12h6.572l-1.305 6.093a.75.75 0 0 0 1.292.657l8.5-9.5A.75.75 0 0 0 17.25 8h-6.572l1.305-6.093Z" />
@@ -335,7 +453,7 @@
 				disabled={appState === 'loading'}
 				placeholder="Paste any URL, text, or drop a file to begin..."
 				rows="3"
-				class="w-full bg-transparent border-none outline-none resize-none text-center text-xl text-muted-foreground placeholder:text-border leading-relaxed"
+				class="w-full bg-transparent border-none outline-none resize-none text-center text-xl text-muted-foreground placeholder:text-border leading-relaxed transition-colors {isDragging ? 'text-foreground/80' : ''}"
 			></textarea>
 
 			{#if appState === 'loading'}
@@ -349,6 +467,19 @@
 					{errorMessage}
 				</p>
 			{/if}
+
+			{#if hasSavedSession}
+				<button
+					onclick={resumeSession}
+					class="mt-6 px-4 py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg hover:border-muted-foreground transition-colors"
+				>
+					Resume reading: <span class="italic">{savedSessionPreview}</span>
+				</button>
+			{/if}
+
+			<p class="mt-6 text-xs text-muted-foreground text-center max-w-xs">
+				Tip: 250-400 wpm gives best comprehension. Higher speeds are better for skimming.
+			</p>
 		</div>
 
 	{:else if appState === 'countdown'}
@@ -402,7 +533,7 @@
 
 						<button
 							onclick={togglePlay}
-							class="px-5 py-1.5 text-sm font-medium rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+							class="px-5 py-1.5 text-sm font-medium rounded-full bg-border text-foreground hover:opacity-80 transition-opacity"
 						>
 							{appState === 'playing' ? 'Pause' : 'Start'}
 						</button>
@@ -425,7 +556,7 @@
 							<input
 								type="range"
 								min="100"
-								max="1200"
+								max="900"
 								step="25"
 								bind:value={wpm}
 								oninput={handleWpmChange}
